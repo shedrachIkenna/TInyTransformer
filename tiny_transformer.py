@@ -29,3 +29,9 @@ def decode(l):
     """
     return "".join(itos[i] for i in l)
 
+data = torch.tensor(encode(text), dtype=torch.long)
+n = len(data)
+train_data = data[: int(0.9 * n)]
+val_data = data[int(0.9 * n):]
+
+
