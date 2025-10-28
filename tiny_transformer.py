@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F 
 from tqdm import tqdm 
 from pathlib import Path
+import math
 
 # Hyperparams 
 device = torch.device("cpu")
@@ -60,7 +61,8 @@ class PositionalEncoding(nn.Module):
 
         self.register_buffer('pe', pe)
 
-        
-
+    def forward(self, x):
+        t = x.size(1)
+        return x + self.pe[:t, :].unsqueeze(0)
 
 
