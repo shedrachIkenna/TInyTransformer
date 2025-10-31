@@ -52,7 +52,7 @@ class PositionalEncoding(nn.Module):
         """
         Calculations for Positional Encoding 
         """
-        pe = torch.zeros(max_len, d_model) # Create a zeros matrix of size (max_men X d_model)
+        pe = torch.zeros(max_len, d_model) # Create a zeros matrix of size (max_len X d_model)
         pos = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1) # Creates a matrix of size (max_len X 1) ex: [0,1,2,3,4...]T 
 
         # Calculation of the frequency term 
@@ -77,6 +77,20 @@ class PositionalEncoding(nn.Module):
             x.size(2) = d 
         """
         t = x.size(1) 
+        """
+        
+            self.pe[:t, :] - take the first 3 rows of all columns in pe. 
+            
+        .unsqueeze(0): changes the shape of self.pe[:t, :] 
+                        from 
+                            (max_len X d_model) 
+                        to 
+                            (1 X max_len X d_model) 
+                    This is done so that elementwise addition can be performed
+                    Example: 
+                    x                : (B, T, d) = (2, 3, 4)
+                    pe[:t, :].unsqueeze(0): (1, T, d) = (1, 3, 4)
+        """
         return x + self.pe[:t, :].unsqueeze(0)
 
 
