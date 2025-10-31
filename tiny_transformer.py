@@ -52,16 +52,21 @@ class PositionalEncoding(nn.Module):
         pos = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
 
-        # Handle for both even and odd d_model
+        
         pe[:, 0::2] = torch.sin(pos * div)
+        # Prevents out of bounds error/shape mismatch when embedding dimension has odd number of features(columns)
         if d_model % 2 == 0:
             pe[:, 1::2] = torch.cos(pos * div)
         else:
             pe[:, 1::2] = torch.cos(pos * div[:pe[:, 1::2].size(1)])
 
-        self.register_buffer('pe', pe)
+        self.register_buffer('pe', pe) # store tensor pe but not as a trainable parameter 
 
-    def forward(self, x):
+    def forward(self, x): # x is a group of sentence embeddings in a 3d tensor 
+        # x has a size (B=batch(number of sentences), T=sqeuence length(number of tokens per sentence), d=dimension of embeddings)
+        # x.size(0) = B
+        # x.size(1) = T
+        # x.size(2) = d 
         t = x.size(1)
         return x + self.pe[:t, :].unsqueeze(0)
 
