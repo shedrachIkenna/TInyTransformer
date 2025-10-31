@@ -48,12 +48,18 @@ def get_batch(split):
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len=1000):
         super().__init__()
-        pe = torch.zeros(max_len, d_model)
-        pos = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+
+        """
+        Calculations for Positional Encoding 
+        """
+        pe = torch.zeros(max_len, d_model) # Create a zeros matrix of size (max_men X d_model)
+        pos = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1) # Creates a matrix of size (max_len X 1) ex: [0,1,2,3,4...]T 
+
+        # Calculation of the frequency term 
+        div = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)) # Rewrite the formula using exponential and lin identies 
 
         
-        pe[:, 0::2] = torch.sin(pos * div)
+        pe[:, 0::2] = torch.sin(pos * div) 
         # Prevents out of bounds error/shape mismatch when embedding dimension has odd number of features(columns)
         if d_model % 2 == 0:
             pe[:, 1::2] = torch.cos(pos * div)
@@ -62,12 +68,15 @@ class PositionalEncoding(nn.Module):
 
         self.register_buffer('pe', pe) # store tensor pe but not as a trainable parameter 
 
-    def forward(self, x): # x is a group of sentence embeddings in a 3d tensor 
-        # x has a size (B=batch(number of sentences), T=sqeuence length(number of tokens per sentence), d=dimension of embeddings)
-        # x.size(0) = B
-        # x.size(1) = T
-        # x.size(2) = d 
-        t = x.size(1)
+    def forward(self, x): 
+        """
+            x is a group of sentence embeddings in a 3d tensor 
+            x has a size (B=batch(number of sentences), T=sqeuence length(number of tokens per sentence), d=dimension of embeddings)
+            x.size(0) = B
+            x.size(1) = T
+            x.size(2) = d 
+        """
+        t = x.size(1) 
         return x + self.pe[:t, :].unsqueeze(0)
 
 
