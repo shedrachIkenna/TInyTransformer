@@ -128,4 +128,15 @@ class LayerNorm(nn.Module):
         self.gamma = nn.Parameter(torch.ones(dim))
         self.beta = nn.Parameter(torch.zeros(dim))
 
+    def forward(self, x):
+        """
+        Normalization Calculation Funtion
+            Calculate mean
+            Calculate variance 
+            Apply normalization formula using the mean and variance initially calculated 
+            Apply scale and shift using the learnable parameters gamme and beta and the formula 
+        x = token embeddings 
+        x.shape = (B, T, D)
+        """
+
 
