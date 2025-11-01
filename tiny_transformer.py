@@ -106,6 +106,23 @@ class LayerNorm(nn.Module):
         Scales and shift each token's normalized values using learned parameter Gamma and Beta 
     """
     def __init__(self, dim, eps=1e-5):
+        """
+        LayerNorm Constructor 
+        
+        super()
+            runs the super class nn.Module constructor 
+        
+        eps:
+            tiny number added inside the sqrt for numerical stability
+        
+        gamma: 
+            learnable parameter gamma initialized to ones (so initial scale = 1)
+            Making it an nn.Parameter means it will get gradients and be updated by the optimizer
+        
+        beta: 
+            learnable parameter beta initialized to zeros (so initial shift = 0)
+            Making it an nn.Parameter means it will get gradients and be updated by the optimizer
+        """
         super().__init__()
         self.eps = eps
         self.gamma = nn.Parameter(torch.ones(dim))
