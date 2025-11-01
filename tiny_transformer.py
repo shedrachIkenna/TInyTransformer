@@ -95,6 +95,16 @@ class PositionalEncoding(nn.Module):
     
 
 class LayerNorm(nn.Module):
+    """
+    Normalization Layer:
+        
+    Input: 
+        Token embeddings x with shape (B,T,D)
+    
+    Action: 
+        Normalizes the dimension D of each token 
+        Scales and shift each token's normalized values using learned parameter Gamma and Beta 
+    """
     def __init__(self, dim, eps=1e-5):
         super().__init__()
         self.eps = eps
