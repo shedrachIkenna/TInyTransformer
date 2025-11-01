@@ -92,5 +92,13 @@ class PositionalEncoding(nn.Module):
                     pe[:t, :].unsqueeze(0): (1, T, d) = (1, 3, 4)
         """
         return x + self.pe[:t, :].unsqueeze(0)
+    
+
+class LayerNorm(nn.Module):
+    def __init__(self, dim, eps=1e-5):
+        super().__init__()
+        self.eps = eps
+        self.gamma = nn.Parameter(torch.ones(dim))
+        self.beta = nn.Parameter(torch.zeros(dim))
 
 
