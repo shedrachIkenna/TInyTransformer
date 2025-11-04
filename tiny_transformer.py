@@ -17,6 +17,8 @@ assert data_path.exists(), "Create data/text.txt with some text"
 text = data_path.read_text(encoding="utf-8")
 chars = sorted(list(set(text)))
 vocab_size = len(chars)
+
+# convert text to numbers 
 stoi = {ch:i for i,ch in enumerate(chars)}  #This builds a dictionary (mapping) from each character (ch) to a number (i).
 itos = {i:ch for ch,i in stoi.items()} # This does the reverse of stoi: creates a dictionary that maps each number back to a character.
 
@@ -142,8 +144,6 @@ class LayerNorm(nn.Module):
         mu = x.mean(-1, keepdim=True) # calculate mean 
         var = x.var(-1, unbiased=True, keepdim=True) # calculate variance 
         x_norm = (x - mu) / torch.sqrt(var + self.eps) # normalize x using the normalization formula 
-        return self.gamma * x_norm + self.beta # Return x after scale and shift using the learnable parameter gamma and beta
-    
-    
+        return self.gamma * x_norm + self.beta # Return x after scale and shift using the learnable parameter gamma and beta    
 
 
