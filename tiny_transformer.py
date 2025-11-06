@@ -144,6 +144,10 @@ class LayerNorm(nn.Module):
         mu = x.mean(-1, keepdim=True) # calculate mean 
         var = x.var(-1, unbiased=True, keepdim=True) # calculate variance 
         x_norm = (x - mu) / torch.sqrt(var + self.eps) # normalize x using the normalization formula 
-        return self.gamma * x_norm + self.beta # Return x after scale and shift using the learnable parameter gamma and beta    
+        return self.gamma * x_norm + self.beta # Return x after scale and shift using the learnable parameter gamma and beta   
+
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, d_model, n_heads, drop_out=0.1):
+        
 
 
