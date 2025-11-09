@@ -147,7 +147,12 @@ class LayerNorm(nn.Module):
         return self.gamma * x_norm + self.beta # Return x after scale and shift using the learnable parameter gamma and beta   
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, d_model, n_heads, drop_out=0.1):
-        
+    def __init__(self, d_model: int, n_heads: int):
+        super().__init__() # initiliaze the nn.Module(super class) internals 
+        assert d_model % n_heads == 0 # Ensures that the embedding dimensions(features) can be split equally 
+        self.d_model = d_model # embedding dimension (D)
+        self.n_heads = n_heads # number of attention heads (H)
+        self.d_head = d_model // n_heads # dimensions(features) per attention head (d_k = D/H)
+
 
 
