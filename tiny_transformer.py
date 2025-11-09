@@ -9,6 +9,7 @@ import math
 device = torch.device("cpu")
 block_size = 64
 batch_size = 12
+dropout = 0.1
 
 
 # Data loader 
@@ -156,7 +157,8 @@ class MultiHeadSelfAttention(nn.Module):
 
         # Combine Wq, Wk, Wv into one big matrix (layer) - This saves computation 
         self.qkv_proj = nn.Linear(d_model, 3 * d_model, bias=False) # The nn.Linear class gives us the implemetaion used to create the one big matrix 
-
+        self.out = nn.Linear(d_model, d_model) # W_out weight that mixes attention heads 
+        self.dropout = nn.Dropout(dropout) # Dropout is a regularization technique that prevents overfitting 
     
     def forward(self, x, mask=None):
         """
