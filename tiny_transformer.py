@@ -153,6 +153,13 @@ class MultiHeadSelfAttention(nn.Module):
         self.d_model = d_model # embedding dimension (D)
         self.n_heads = n_heads # number of attention heads (H)
         self.d_head = d_model // n_heads # dimensions(features) per attention head (d_k = D/H)
+    
+    def forward(self, x, mask=None):
+        """
+        x: tensor of shape (B, T, D). where: 
+            D = self.d_model 
+        mask: optional attention mask. ignore this for now 
+        """
 
 
 
