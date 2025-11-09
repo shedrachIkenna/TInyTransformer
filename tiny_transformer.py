@@ -154,7 +154,9 @@ class MultiHeadSelfAttention(nn.Module):
         self.n_heads = n_heads # number of attention heads (H)
         self.d_head = d_model // n_heads # dimensions(features) per attention head (d_k = D/H)
 
-        
+        # Combine Wq, Wk, Wv into one big matrix (layer) - This saves computation 
+        self.qkv_proj = nn.Linear(d_model, 3 * d_model, bias=False) # The nn.Linear class gives us the implemetaion used to create the one big matrix 
+
     
     def forward(self, x, mask=None):
         """
@@ -163,7 +165,11 @@ class MultiHeadSelfAttention(nn.Module):
         mask: optional attention mask. ignore this for now 
         """
         B, T, D = x.shape
-        assert D == self.d_model # Ensure self.d_model == D
+        # Compute Q, K, V together 
+        qkv = self.qkv_proj(x) # Compute Q = x.W_q, K = x.W_k, V = x.W_v. All into one matrix qkv 
+
+        # split the big matrix into Q, K, V respectively 
+        q, k, v = qkv.chunk(3, dim=-1)
 
         return x 
 
