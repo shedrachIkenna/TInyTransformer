@@ -169,11 +169,26 @@ class MultiHeadSelfAttention(nn.Module):
         B, T, D = x.shape
         # Compute Q, K, V together 
         qkv = self.qkv_proj(x) # Compute Q = x.W_q, K = x.W_k, V = x.W_v. All into one matrix qkv 
+        # Split qkv into 3 matrices, each having n_heads with n_head in each n_heads 
+        qkv = qkv.view(B, T, 3, self.n_heads, self.d_head) 
+        # Setting the 3 matrices above to be Q, K, V 
+        q, k, v = qkv[:,:,0], qkv[:,:,1], qkv[:,:,2]
+        # Transpose  to (B, H, T, dh) from (B,T,H,dh)
+        q = q.permute(0,2,1,3)
+        k = k.permute(0,2,1,3)
+        v = v.permute(0,2,1,3)
+        # attention scores
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_head)
+        if mask is not None: # masking simply means controlling the attention of tokens to each other. We can allow or block the attention of a token using a mask matrix which changes the attention score of that token 
+            scores = scores.masked_fill(mask==0, float('-inf')) # replaces all the places where mask == 0 (blocked tokens) with -inf in the scores matrix. When we apply softmax in the next step, it changes -inf to 0 probability
+        probs = F.softmax(scores, dim=-1)
+        probs = self.dropout(probs)
+        out = torch.matmul(probs, v)
+        out = out.permute(0,2,1,3).contiguous().view(B, T, D) # Combines all attention heads 
+        return self.out(out)
 
-        # split the big matrix into Q, K, V respectively 
-        q, k, v = qkv.chunk(3, dim=-1)
 
-        return x 
+        return x    
 
 
 
