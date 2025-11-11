@@ -217,5 +217,17 @@ class FeedForward(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+class TransformerBlock(nn.Module):
+    """
+    This is the main Transformer class that combines all the layers above 
+    """
+    def __init__(self, d_model, n_heads, d_ff, dropout=0.1):
+        super().__init__()
+        self.ln1 = LayerNorm(d_model)
+        self.attn = MultiHeadSelfAttention(d_model, n_heads, dropout)
+        self.ln2 = LayerNorm(d_model)
+        self.ffn = FeedForward(d_model, d_ff, dropout)
+
+
 
 
