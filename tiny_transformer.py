@@ -186,9 +186,22 @@ class MultiHeadSelfAttention(nn.Module):
         out = torch.matmul(probs, v)
         out = out.permute(0,2,1,3).contiguous().view(B, T, D) # Combines all attention heads 
         return self.out(out)
-
-
         return x    
+
+class FeedForward(nn.Module):
+    """
+    The FeedForward layer adds non-linearity to each token's embedding individually. 
+    It allows the model to 
+        - learn non-linear decision boundaries 
+        - build abstract representations 
+        - capture higher order interactions (like logic or compositionality)
+
+    Steps
+        - Expand the dimensionality of each token's embeddings 
+        - Apply non-linearity using GELU (Gaussian Error Linear Unit)
+        - Project the dimension of each token's embeddings back down to its original dimension
+        - Apply regularization (dropout) to aviod overfitting 
+    """
 
 
 
