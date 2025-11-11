@@ -228,6 +228,11 @@ class TransformerBlock(nn.Module):
         self.ln2 = LayerNorm(d_model)
         self.ffn = FeedForward(d_model, d_ff, dropout)
 
-
-
-
+    def forward(self, x, mask=None):
+        y = self.ln1(x)
+        y = self.attn(y, mask=mask)
+        x = x + y 
+        z = self.ln2(x)
+        z = self.attn(z)
+        x = x + z 
+        return x 
