@@ -196,13 +196,26 @@ class FeedForward(nn.Module):
         - build abstract representations 
         - capture higher order interactions (like logic or compositionality)
 
-    Steps
+    Layer Steps:
         - Expand the dimensionality of each token's embeddings 
         - Apply non-linearity using GELU (Gaussian Error Linear Unit)
         - Project the dimension of each token's embeddings back down to its original dimension
         - Apply regularization (dropout) to aviod overfitting 
     """
+    def __init__(self, d_model, d_ff, dropout=0.1):
+        super().__init__()
+        """
+        nn.Sequential stacks the multiple layer steps together by connecting the output of one layer to the input of the next just like a pipeline 
+        """
+        self.net = nn.Sequential(
+            nn.Linear(d_model, d_ff),
+            nn.GELU(),
+            nn.Linear(d_ff, d_model),
+            nn.Dropout(dropout)
+        )
 
+    def forward(self, x):
+        return self.net(x)
 
 
 
