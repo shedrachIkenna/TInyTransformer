@@ -236,3 +236,14 @@ class TransformerBlock(nn.Module):
         z = self.attn(z)
         x = x + z 
         return x 
+    
+
+class TinyTransformerLM(nn.Module):
+    """
+    This is the complete working encoder-decoder (GPT-like) Transformer. Its does the following 
+        - Create embeddings 
+        - Add positional encoding 
+        - Stach transformer blocks (LayerNorm, MultiHeadSelfAttention, FeedForward)
+        - End with prediction for next token 
+    """
+    def __init__(self, vocab_size, d_model, n_layers, n_heads, d_ff, block_size, dropout=0.1):
