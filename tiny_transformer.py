@@ -269,5 +269,25 @@ class TinyTransformerLM(nn.Module):
 
         # Initialize weights 
         # Initialize all weights using small random values to help the model start training smoothly 
-        self.apply(self.__init__weights)
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        """
+        Sets initial weight values - why?
+            - Remember that every neural network learns through the adjustments of parameters (weights and biases). At the start, we must give them initial values before training begins 
+        
+        What happens if we initialize them poorly? 
+            - Gradients vanish or explode 
+            - The network fails to learn meaningful patterns 
+            - Training becomes slow or unstable 
+        """
+        if isinstance(module, nn.Linear): # Checks if current layer is a fully connected layer. fully connected layers also need initial bias values 
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None: # safe checks if bias is defined already
+                torch.nn.init.zeros_(module.bias) # Sets initial bias values to zero 
+            elif isinstance(module, nn.Embedding): # Check if current layer is embedding layer - Embedding layers only need initial weight values - no bias 
+                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02) # Initialize weights using random values with mean around zero and std of 0.02
+
+
+
     
