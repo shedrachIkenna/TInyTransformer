@@ -317,6 +317,13 @@ class TinyTransformerLM(nn.Module):
         # projects each token's final hidden vector into a vector of size vocab_size
         logits = self.head(x)  # Each row of logits gives scores for every vocabulary token
 
+        # Compute loss 
+        loss = None
+        if targets is not None: 
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+        return logits, loss 
+
+
         
 
     
