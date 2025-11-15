@@ -288,6 +288,35 @@ class TinyTransformerLM(nn.Module):
             elif isinstance(module, nn.Embedding): # Check if current layer is embedding layer - Embedding layers only need initial weight values - no bias 
                 torch.nn.init.normal_(module.weight, mean=0.0, std=0.02) # Initialize weights using random values with mean around zero and std of 0.02
 
+    def forward(self, idx, targets=None):
+        """
+        This function does three things 
+            - convert input token ids to embeddings 
+            - process them through the transformer layers 
+            - project final hidden states -> logits -> loss 
+        
+        Args: 
+            idx: batch of token IDs 
+            targets: 
+        """
 
+        B, T = idx.size()  # gives us the batch and sequence length 
+        assert T <= self.block_size # checks if the sequence length is less than or equal to the pre-defined blocksize 
+        tok = self.token_emb # converts IDs to actual embeddings (B, T, D)]
+        x = self.pos_emb(tok) # Adds positional encoding 
+
+        # Use cached casual mask 
+        mask = self.causal_mask[:, :, :T, :T] 
+
+        # Apply each transformer layer
+        for layer in self.layers: 
+            x = layer(x, mask=mask)
+        
+        x = self.ln_f(x) # Apply final normalization layer 
+
+        # projects each token's final hidden vector into a vector of size vocab_size
+        logits = self.head(x)  # Each row of logits gives scores for every vocabulary token
+
+        
 
     
