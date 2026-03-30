@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from tqdm import tqdm 
 from pathlib import Path
 import math
+import matplotlib.pyplot as plt 
 
 # Hyperparams 
 device = torch.device("cpu")
@@ -330,6 +331,16 @@ class TinyTransformerLM(nn.Module):
         return logits, loss 
 
 
+# Training Visualization 
+def plot_learning_curves(iter_list, train_loss, val_loss):
+    plt.figure(figsize=(10, 5))
+    plt.plot(iter_list,train_loss, label="Train Loss")
+    plt.plot(iter_list, val_loss, label="Val Loss")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.title("Training and Validation Loss")
+    plt.legend()
+    plt.show()
         
 
     
