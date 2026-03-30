@@ -8,8 +8,14 @@ import math
 # Hyperparams 
 device = torch.device("cpu")
 block_size = 64
-batch_size = 12
+batch_size = 32
 dropout = 0.1
+n_embd = 128
+n_head = 4
+n_layer = 4 
+learning_rate = 3e-4
+max_iters = 2000
+eval_interval = 200
 
 
 # Data loader 
@@ -233,7 +239,7 @@ class TransformerBlock(nn.Module):
         y = self.attn(y, mask=mask)
         x = x + y 
         z = self.ln2(x)
-        z = self.attn(z)
+        z = self.ffn(z)
         x = x + z 
         return x 
     
