@@ -344,7 +344,12 @@ def plot_learning_curves(iter_list, train_loss, val_loss):
 
 def check_gradient_flow(model):
     """Check the average gradient magnitude per layer"""
-    
+    grads = []
+    layers = []
+    for n, p in model.named_parameters():
+        if p.requires_grad and p.grad is not None and "bais" not in n:
+            layers.append(n)
+            grads.append(p.grad.abs().mean().item())
         
 
     
