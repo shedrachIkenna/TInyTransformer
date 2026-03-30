@@ -341,6 +341,10 @@ def plot_learning_curves(iter_list, train_loss, val_loss):
     plt.title("Training and Validation Loss")
     plt.legend()
     plt.show()
+
+def check_gradient_flow(model):
+    """Check the average gradient magnitude per layer"""
+    
         
 
     
