@@ -350,6 +350,13 @@ def check_gradient_flow(model):
         if p.requires_grad and p.grad is not None and "bais" not in n:
             layers.append(n)
             grads.append(p.grad.abs().mean().item())
+    
+    plt.figure(figsize=(12, 4))
+    plt.bar(layers, grads)
+    plt.xticks(rotation=90)
+    plt.title("Gradient Magnitude per Layer")
+    plt.ylabel("Mean Abs Gradient")
+    plt.show()
         
 
     
