@@ -357,6 +357,12 @@ def check_gradient_flow(model):
     plt.title("Gradient Magnitude per Layer")
     plt.ylabel("Mean Abs Gradient")
     plt.show()
+
+# Training Execution 
+model = TinyTransformerLM(vocab_size, n_embd, n_layer, n_head, n_embd*4, block_size, dropout).to(device)
+optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+
+
         
 
     
