@@ -193,7 +193,6 @@ class MultiHeadSelfAttention(nn.Module):
         out = torch.matmul(probs, v)
         out = out.permute(0,2,1,3).contiguous().view(B, T, D) # Combines all attention heads 
         return self.out(out)
-        return x    
 
 class FeedForward(nn.Module):
     """
