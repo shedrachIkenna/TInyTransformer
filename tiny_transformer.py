@@ -362,7 +362,30 @@ def check_gradient_flow(model):
 model = TinyTransformerLM(vocab_size, n_embd, n_layer, n_head, n_embd*4, block_size, dropout).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
+train_history, val_history, iter_history = [], [], [] 
 
-        
+print(f"Training on {device}...")
+for i in range(max_iters):
+    # Training step 
+    xb, yb = get_batch('train')
+    logits, loss = model(xb, yb)
+
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    optimizer.step()
+
+    # Evaluation 
+    if i % eval_interval == 0 or i == max_iters - 1: 
+        model.eval()
+        with torch.no_grad():
+            xv, yv = get_batch("val")
+            _, v_loss = model(xv, yv)
+            print(f"Step {i}: Train Loss {loss.item():.4f}, Val Loss {v_loss.item():.4f}")
+
+            iter_history.append(i)
+            train_history.append(loss.item())
+            val_history.append(v_loss.item())
+
+        model.train()        
 
     
