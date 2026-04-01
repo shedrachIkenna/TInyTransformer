@@ -388,4 +388,12 @@ for i in range(max_iters):
 
         model.train()        
 
+# Plot Learning Curves 
+plot_learning_curves(iter_history, train_history, val_history)
+check_gradient_flow(model)
+
+# Generate something 
+print("\nGenerated Sample")
+context = torch.zeros((1, 1), dtype=torch.long, device=device)
+print(decode(model.generate(context, max_new_tokens=100)[0].tolist()))
     
