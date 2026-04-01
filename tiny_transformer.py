@@ -308,7 +308,7 @@ class TinyTransformerLM(nn.Module):
 
         B, T = idx.size()  # gives us the batch and sequence length 
         assert T <= self.block_size # checks if the sequence length is less than or equal to the pre-defined blocksize 
-        tok = self.token_emb # converts IDs to actual embeddings (B, T, D)]
+        tok = self.token_emb(idx) # converts IDs to actual embeddings (B, T, D)]
         x = self.pos_emb(tok) # Adds positional encoding 
 
         # Use cached casual mask 
