@@ -350,6 +350,10 @@ class TinyTransformerLM(nn.Module):
             idx: extented token IDs, shape (B, T + max_new_tokens)
         """
 
+        for _ in range(max_new_tokens):
+            # crop context to block_size if its grown too long 
+            idx_cond = idx[:, -self.block_size:]
+
 
 # Training Visualization 
 def plot_learning_curves(iter_list, train_loss, val_loss):
