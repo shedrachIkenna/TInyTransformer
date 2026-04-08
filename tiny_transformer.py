@@ -60,7 +60,7 @@ def get_batch(split):
     # Select the same 64 tokens for each starting position but shifted one token left 
     # This becomes the target feature tokens 
     y = torch.stack([src[i+1:i+block_size+1] for i in ix])
-    
+
     return x.to(device), y.to(device)
 
 
@@ -337,6 +337,18 @@ class TinyTransformerLM(nn.Module):
         if targets is not None: 
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
         return logits, loss 
+    
+    def generate(self, idx, max_new_tokens):
+        """
+        Autoregressively generates new tokens given a starting context 
+
+        Args:
+            idx: starting token IDs, shape [B, T]
+            max_new_tokens: number of new tokens to generate 
+
+        Returns: 
+            idx: extented token IDs, shape (B, T + max_new_tokens)
+        """
 
 
 # Training Visualization 
