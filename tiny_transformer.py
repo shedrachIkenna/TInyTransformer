@@ -354,6 +354,9 @@ class TinyTransformerLM(nn.Module):
             # crop context to block_size if its grown too long 
             idx_cond = idx[:, -self.block_size:]
 
+            # forward pass 
+            logits, _ = self(idx_cond)
+
 
 # Training Visualization 
 def plot_learning_curves(iter_list, train_loss, val_loss):
