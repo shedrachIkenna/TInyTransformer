@@ -357,6 +357,10 @@ class TinyTransformerLM(nn.Module):
             # forward pass 
             logits, _ = self(idx_cond)
 
+            # get the logits of the last step (from the last token, the logits for the next token is computed)
+            logits = logits[:, -1, :] # select all batches, select the last step token, select all the vocab scores 
+            
+
 
 # Training Visualization 
 def plot_learning_curves(iter_list, train_loss, val_loss):
