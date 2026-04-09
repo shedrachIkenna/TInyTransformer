@@ -426,7 +426,11 @@ for i in range(max_iters):
             train_history.append(loss.item())
             val_history.append(v_loss.item())
 
-        model.train()        
+        model.train()    
+
+# Save weights after training
+torch.save(model.state_dict(), "tiny_transformer.pth")
+print("Model weights saved to tiny_transformer.pth")    
 
 # Plot Learning Curves 
 plot_learning_curves(iter_history, train_history, val_history)
@@ -434,6 +438,8 @@ check_gradient_flow(model)
 
 # Generate something 
 print("\nGenerated Sample")
+model.eval()
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(model.generate(context, max_new_tokens=100)[0].tolist()))
+with torch.no_grad():
+    print(decode(model.generate(context, max_new_tokens=200)[0].tolist()))
     
