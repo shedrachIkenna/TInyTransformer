@@ -368,6 +368,9 @@ class TinyTransformerLM(nn.Module):
             # chosen, lower-probability tokens can also be selected 
             next_token = torch.multinomial(probs, num_samples=1)
 
+            # Append the new token to the sequence 
+            idx = torch.cat([idx, next_token], dim=1)
+
 # Training Visualization 
 def plot_learning_curves(iter_list, train_loss, val_loss):
     plt.figure(figsize=(10, 5))
