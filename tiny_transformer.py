@@ -363,6 +363,10 @@ class TinyTransformerLM(nn.Module):
             # convert logits to probabilities 
             probs = F.softmax(logits, dim=-1)
 
+            # Sampling the next token probabilities
+            # This way, the model becomes non-deterministic because even though tokens with higher probabilities are likely to be 
+            # chosen, lower-probability tokens can also be selected 
+            next_token = torch.multinomial(probs, num_samples=1)
 
 # Training Visualization 
 def plot_learning_curves(iter_list, train_loss, val_loss):
