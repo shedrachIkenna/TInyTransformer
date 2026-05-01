@@ -311,28 +311,37 @@ class TinyTransformerLM(nn.Module):
     """
     This is the complete working encoder-decoder (GPT-like) Transformer. Its does the following 
         - Create embeddings 
-        - Add positional encoding 
+        - Add positional encoding (RoPE). One shared RotaryEmbedding is created and passed to every attention
+          layer (sharing is fine — they all use the same frequency table)
         - Stach transformer blocks (LayerNorm, MultiHeadSelfAttention, FeedForward)
         - End with prediction for next token 
     """
     def __init__(self, vocab_size, d_model, n_layers, n_heads, d_ff, block_size, dropout=0.1):
+
         super().__init__()
+
         self.token_emb = nn.Embedding(vocab_size, d_model) # Create embeddings of length vocab_size and dimension of d_model 
-        self.pos_emb = PositionalEncoding(d_model, max_len=block_size+1) # Positional encoding 
+
+        # One shared RoPE table — operates on per-head dimension
+        d_head = d_model // n_heads
+        self.rotary = RotaryEmbedding(d_head, max_len=block_size + 1)
+
         # Create n_layers of transformer blocks. Example if n_layers = 6, it creates 6 transformer block 
         # Each block takes the output of the previous one and refines it further 
         self.layers = nn.ModuleList([
-            TransformerBlock(d_model, n_heads, d_ff, dropout) for _ in range(n_layers)
+            TransformerBlock(d_model, n_heads, d_ff, self.rotary, dropout) for _ in range(n_layers)
         ])
-        self.ln_f = LayerNorm(d_model) # Final Normalization Layer 
 
+
+        self.ln_f = LayerNorm(d_model) # Final Normalization Layer 
         self.head = nn.Linear(d_model, vocab_size, bias=False) # For every token, it outputs a probability for the next token
         self.block_size = block_size 
+
         # Tie the weights of inputs embeddings and the output projection. Same vectors used for encode tokens to embeddings are used to decode them 
         self.head.weight = self.token_emb.weight # Reuse embedding weights for decoding. why? final layer weight is just a transpose of the embedding layer weight
         
         # Casual mask 
-        # Creates lower triangular matrix which allows each token to attend only to previous tokens, not future ones
+        # Creates lower triangular matrix which allows each token to attend only to previous tokens, not future ones (each token only sees past tokens)
         mask = torch.tril(torch.ones(block_size, block_size, dtype=torch.bool))
         self.register_buffer('causal_mask', mask.unsqueeze(0).unsqueeze(0))
 
@@ -354,8 +363,8 @@ class TinyTransformerLM(nn.Module):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None: # safe checks if bias is defined already
                 torch.nn.init.zeros_(module.bias) # Sets initial bias values to zero 
-            elif isinstance(module, nn.Embedding): # Check if current layer is embedding layer - Embedding layers only need initial weight values - no bias 
-                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02) # Initialize weights using random values with mean around zero and std of 0.02
+        elif isinstance(module, nn.Embedding): # Check if current layer is embedding layer - Embedding layers only need initial weight values - no bias 
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02) # Initialize weights using random values with mean around zero and std of 0.02
 
     def forward(self, idx, targets=None):
         """
