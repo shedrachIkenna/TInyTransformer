@@ -64,53 +64,92 @@ def get_batch(split):
     return x.to(device), y.to(device)
 
 
-class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, max_len=1000):
+class RotaryEmbedding(nn.Module):
+    """
+    Precomputes the cosine and sine tables used to rotate Q and K vectors.
+ 
+    Core idea:
+        Each query/key vector of dimension d_head is treated as d_head/2
+        complex numbers. We rotate each pair by an angle that depends on:
+            - the token's position  (pos)
+            - the frequency of that pair's "slot" (theta_i)
+ 
+        theta_i = 10000^(-2i / d_head)   for i = 0, 1, ..., d_head/2 - 1
+ 
+        The rotation angle for position pos at slot i is:
+            pos * theta_i
+ 
+        This is applied as:
+            x_rot = x * cos(pos * theta) + rotate_half(x) * sin(pos * theta)
+ 
+        where rotate_half(x) swaps pairs: [x1, x2, x3, x4] -> [-x2, x1, -x4, x3]
+ 
+    Why RoPE beats additive sinusoidal PE:
+        - Position info is baked into Q·K dot products, not the token vectors
+        - The dot product q_m · k_n only depends on (m - n), i.e. RELATIVE distance
+        - No extra parameters; no position vectors added to residual stream
+        - Generalises better to longer sequences than seen during training
+    """
+    def __init__(self, d_head: int, max_len: int = 4096):
         super().__init__()
+        # θ_i = 10000^(-2i / d_head) — one frequency per pair of dimensions
+        # shape: (d_head // 2,)
+        theta = 1.0 / (10000.0 ** (torch.arange(0, d_head, 2).float() / d_head))
+ 
+        # positions 0, 1, 2, ..., max_len-1 — shape: (max_len,)
+        pos = torch.arange(max_len).float()
+ 
+        # outer product -> angles[pos, i] = pos * theta_i
+        # shape: (max_len, d_head // 2)
+        angles = torch.outer(pos, theta)
+ 
+        # Duplicate each angle for the two elements in each pair:
+        # [a, b, c] -> [a, a, b, b, c, c]   shape: (max_len, d_head)
+        angles = torch.cat([angles, angles], dim=-1)
+ 
+        # Store cos and sin tables as non-trainable buffers
+        self.register_buffer('cos', angles.cos())   # (max_len, d_head)
+        self.register_buffer('sin', angles.sin())   # (max_len, d_head)
 
+    @staticmethod
+    def rotate_half(x):
         """
-        Calculations for Positional Encoding 
+        Splits x into two halves along the last dimension and produces
+        the "perpendicular" vector needed for the rotation:
+ 
+            x  = [x1, x2]          (each is a block of d_head/2 values)
+            ->   [-x2, x1]
+ 
+        This implements the 2D rotation matrix applied to every pair:
+            [cos  -sin] [x1]   [x1*cos - x2*sin]
+            [sin   cos] [x2] = [x1*sin + x2*cos]
+ 
+        We compute the two terms separately and add them in `apply_rope`.
         """
-        pe = torch.zeros(max_len, d_model) # Create a zeros matrix of size (max_len X d_model)
-        pos = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1) # Creates a matrix of size (max_len X 1) ex: [0,1,2,3,4...]T 
-
-        # Calculation of the frequency term 
-        div = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)) # Rewrite the formula using exponential and lin identies 
-
-        
-        pe[:, 0::2] = torch.sin(pos * div) 
-        # Prevents out of bounds error/shape mismatch when embedding dimension has odd number of features(columns)
-        if d_model % 2 == 0:
-            pe[:, 1::2] = torch.cos(pos * div)
-        else:
-            pe[:, 1::2] = torch.cos(pos * div[:pe[:, 1::2].size(1)])
-
-        self.register_buffer('pe', pe) # store tensor pe but not as a trainable parameter 
-
-    def forward(self, x): 
+        half = x.shape[-1] // 2
+        x1 = x[..., :half]   # first half  of each head vector
+        x2 = x[..., half:]   # second half of each head vector
+        return torch.cat([-x2, x1], dim=-1)
+    
+    def apply_rope(self, x, T):
         """
-            x is a group of sentence embeddings in a 3d tensor 
-            x has a size (B=batch(number of sentences), T=sqeuence length(number of tokens per sentence), d=dimension of embeddings)
-            x.size(0) = B
-            x.size(1) = T
-            x.size(2) = d 
+        Rotate tensor x using the precomputed cos/sin tables.
+ 
+        Args:
+            x : (B, H, T, d_head)  — query or key tensor
+            T : sequence length (used to slice the tables)
+ 
+        Returns:
+            x_rot : (B, H, T, d_head) — rotated version of x
+ 
+        The formula:
+            x_rot = x * cos + rotate_half(x) * sin
+ 
+        cos/sin are sliced to (T, d_head) then broadcast over (B, H).
         """
-        t = x.size(1) 
-        """
-        
-            self.pe[:t, :] - take the first 3 rows of all columns in pe. 
-            
-        .unsqueeze(0): changes the shape of self.pe[:t, :] 
-                        from 
-                            (max_len X d_model) 
-                        to 
-                            (1 X max_len X d_model) 
-                    This is done so that elementwise addition can be performed
-                    Example: 
-                    x                : (B, T, d) = (2, 3, 4)
-                    pe[:t, :].unsqueeze(0): (1, T, d) = (1, 3, 4)
-        """
-        return x + self.pe[:t, :].unsqueeze(0)
+        cos = self.cos[:T, :].unsqueeze(0).unsqueeze(0)  # (1, 1, T, d_head)
+        sin = self.sin[:T, :].unsqueeze(0).unsqueeze(0)  # (1, 1, T, d_head)
+        return x * cos + self.rotate_half(x) * sin
     
 
 class LayerNorm(nn.Module):
