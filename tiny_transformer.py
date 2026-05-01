@@ -203,7 +203,7 @@ class LayerNorm(nn.Module):
         return self.gamma * x_norm + self.beta # Return x after scale and shift using the learnable parameter gamma and beta   
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, d_model: int, n_heads: int, dropout: float = 0.1):
+    def __init__(self, d_model: int, n_heads: int, rotary: RotaryEmbedding):
         super().__init__() # initiliaze the nn.Module(super class) internals 
         assert d_model % n_heads == 0 # Ensures that the embedding dimensions(features) can be split equally 
         self.d_model = d_model # embedding dimension (D)
@@ -214,6 +214,8 @@ class MultiHeadSelfAttention(nn.Module):
         self.qkv_proj = nn.Linear(d_model, 3 * d_model, bias=False) # The nn.Linear class gives us the implemetaion used to create the one big matrix 
         self.out = nn.Linear(d_model, d_model) # W_out weight that mixes attention heads 
         self.dropout = nn.Dropout(dropout) # Dropout is a regularization technique that prevents overfitting 
+        
+        self.rotary = rotary # get rope instance 
     
     def forward(self, x, mask=None):
         """
@@ -222,24 +224,37 @@ class MultiHeadSelfAttention(nn.Module):
         mask: optional attention mask. ignore this for now 
         """
         B, T, D = x.shape
+
+
         # Compute Q, K, V together 
         qkv = self.qkv_proj(x) # Compute Q = x.W_q, K = x.W_k, V = x.W_v. All into one matrix qkv 
         # Split qkv into 3 matrices, each having n_heads with n_head in each n_heads 
         qkv = qkv.view(B, T, 3, self.n_heads, self.d_head) 
         # Setting the 3 matrices above to be Q, K, V 
         q, k, v = qkv[:,:,0], qkv[:,:,1], qkv[:,:,2]
+
+
         # Transpose  to (B, H, T, dh) from (B,T,H,dh)
         q = q.permute(0,2,1,3)
         k = k.permute(0,2,1,3)
         v = v.permute(0,2,1,3)
-        # attention scores
+
+        # Apply RoPE to q and k 
+        q = self.rotary.apply_rope(q, T)
+        k = self.rotary.apply_rope(k, T)
+
+
+        # Scaled dot-product attention
         scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_head)
-        if mask is not None: # masking simply means controlling the attention of tokens to each other. We can allow or block the attention of a token using a mask matrix which changes the attention score of that token 
-            scores = scores.masked_fill(mask==0, float('-inf')) # replaces all the places where mask == 0 (blocked tokens) with -inf in the scores matrix. When we apply softmax in the next step, it changes -inf to 0 probability
+ 
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+ 
         probs = F.softmax(scores, dim=-1)
         probs = self.dropout(probs)
-        out = torch.matmul(probs, v)
-        out = out.permute(0,2,1,3).contiguous().view(B, T, D) # Combines all attention heads 
+ 
+        out = torch.matmul(probs, v)                       
+        out = out.permute(0, 2, 1, 3).contiguous().view(B, T, D)
         return self.out(out)
 
 class FeedForward(nn.Module):
