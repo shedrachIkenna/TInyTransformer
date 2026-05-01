@@ -290,10 +290,10 @@ class TransformerBlock(nn.Module):
     """
     This is the main Transformer class that combines all the layers above 
     """
-    def __init__(self, d_model, n_heads, d_ff, dropout=0.1):
+    def __init__(self, d_model, n_heads, d_ff, rotary: RotaryEmbedding, dropout=0.1):
         super().__init__()
         self.ln1 = LayerNorm(d_model)
-        self.attn = MultiHeadSelfAttention(d_model, n_heads, dropout)
+        self.attn = MultiHeadSelfAttention(d_model, n_heads, rotary)
         self.ln2 = LayerNorm(d_model)
         self.ffn = FeedForward(d_model, d_ff, dropout)
 
