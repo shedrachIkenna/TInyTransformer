@@ -380,8 +380,8 @@ class TinyTransformerLM(nn.Module):
 
         B, T = idx.size()  # gives us the batch and sequence length 
         assert T <= self.block_size # checks if the sequence length is less than or equal to the pre-defined blocksize 
-        tok = self.token_emb(idx) # converts IDs to actual embeddings (B, T, D)]
-        x = self.pos_emb(tok) # Adds positional encoding 
+
+        x = self.token_emb(idx) # converts IDs to actual embeddings (B, T, D)]
 
         # Use cached casual mask 
         mask = self.causal_mask[:, :, :T, :T] 
@@ -401,6 +401,7 @@ class TinyTransformerLM(nn.Module):
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
         return logits, loss 
     
+    @torch.no_grad()
     def generate(self, idx, max_new_tokens):
         """
         Autoregressively generates new tokens given a starting context 
@@ -429,10 +430,11 @@ class TinyTransformerLM(nn.Module):
             # Sampling the next token probabilities
             # This way, the model becomes non-deterministic because even though tokens with higher probabilities are likely to be 
             # chosen, lower-probability tokens can also be selected 
-            next_token = torch.multinomial(probs, num_samples=1)
+            next_id = torch.multinomial(probs, num_samples=1)
 
             # Append the new token to the sequence 
-            idx = torch.cat([idx, next_token], dim=1)
+            idx = torch.cat([idx, next_id], dim=1)
+        return idx 
 
 # Training Visualization 
 def plot_learning_curves(iter_list, train_loss, val_loss):
@@ -503,6 +505,5 @@ check_gradient_flow(model)
 print("\nGenerated Sample")
 model.eval()
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-with torch.no_grad():
-    print(decode(model.generate(context, max_new_tokens=200)[0].tolist()))
+print(decode(model.generate(context, max_new_tokens=200)[0].tolist()))
     
